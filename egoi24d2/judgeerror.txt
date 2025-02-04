@@ -1,0 +1,3 @@
+Usage: ./validate judgein judgeans feedbackdir [opts] < userout./validate: ans.txt is not a directory
+./validate: ans.txt is not a directory
+./validate: feedback is not a directory

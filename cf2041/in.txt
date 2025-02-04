@@ -1,0 +1,7 @@
+6
+add 1 hi
+add 2 hi
+add 3 bi
+add 4 big
+add 5 h
+append h
