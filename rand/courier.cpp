@@ -164,6 +164,7 @@ void aux_tree(vector<int> &nodes) {
  
  
 int32_t main() {
+	dbg("WHY IS THERE A HI HERE");
 	dbg("HI");
         cin >> N >> K;
         int root = 1;
