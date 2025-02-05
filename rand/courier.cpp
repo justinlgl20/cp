@@ -5,11 +5,16 @@ using namespace std;
  
 #define all(x) (x).begin(), (x).end()
  
+template<typename T, typename V>
+ostream& operator<<(ostream&os, pair<T,V> x) {
+	os<<"{"<<x.first<<", "<<x.second<<"}";return os;
+}
 template<template<typename> class Container, typename G>
 ostream& operator<<(ostream& os, Container<G> x) {
     int f = 0; os << '{'; for (auto &i: x) os << (f++ ? ", " : ""), os << i; os << "}";
     return os;
 }
+
  
 void _print() {cerr << "]\n";}
  
@@ -116,13 +121,11 @@ template<int SZ, bool VALS_IN_EDGES> struct HLD {
 		op(pos[x]+VALS_IN_EDGES,pos[y]); 
 	}
 	void modifyPath(int x, int y, int v) { 
-		dbg("MOD", x,y);
 		processPath(x,y,[this,&v](int l, int r) {
 			tree.upd(l,r,v); }); }
 	int queryPath(int x, int y) { 
 		int res = 0; processPath(x,y,[this,&res](int l, int r) {
 			res += tree.query(l,r); });
-		dbg("QUERY",x,y, res);
 		return res; }
 	void modifySubtree(int x, int v) { 
 		tree.upd(pos[x]+VALS_IN_EDGES,pos[x]+sz[x]-1,v); }
@@ -130,19 +133,20 @@ template<int SZ, bool VALS_IN_EDGES> struct HLD {
 HLD<(1ll<<18),true> tree;
 
 bool is_ancestor(int u, int v){
-	return tin[u]<=tin[v] and tout[v]<=tout[v];
+	return tin[u]<=tin[v] and tout[v]<=tout[u];
 }
 vector<int> cadj[200005];
 void aux_tree(vector<int> &nodes) {
 	sort(all(nodes),[&](int i, int j) {return tin[i]<tin[j];});
 	nodes.resize(unique(all(nodes))-nodes.begin());
-	for(int i=0;i<nodes.size()-1;i++){
+	int k=nodes.size();
+	for(int i=0;i<k-1;i++){
 		cadj[nodes[i]].clear();
 		int p=tree.lca(nodes[i],nodes[i+1]);
 		cadj[p].clear();
 		nodes.emplace_back(p);
 	}
-	cadj[nodes.size()-1].clear();
+	cadj[k-1].clear();
 	sort(all(nodes),[&](int i, int j) {return tin[i]<tin[j];});
 	nodes.erase(unique(all(nodes)),nodes.end());
 	vector<int> s;
@@ -245,30 +249,32 @@ int32_t main() {
  
 	dbg("SECOND STAGE");
 	// DONE EVERYTHING WHERE PATHS AREN'T SAME LCA
-	vector<vector<pii>> things(N + 3, vector<pii>());
-	vector<vector<pii>> things2(N + 3, vector<pii>());
+	//vector<vector<pii>> things(N + 3, vector<pii>());
 	tree.modifySubtree(root,0);
 	for(int v: dfs_order) {
+		dbg(v, paths[v]);
+		unordered_map<int,vector<pii>> things;
+		unordered_map<int,vector<pii>> things2;
 		for (pii p : paths[v]){
 			if(p.f != v and p.s != v) {
 				int c=up(p.f, tree.depth[p.f]-tree.depth[v]-1ll);
-				things[c].emplace_back(p);
+				things[c].emplace_back(make_pair(p.f, p.s));
 			}
 			swap(p.f,p.s);
 			if(p.f != v and p.s != v) {
 				int c=up(p.f, tree.depth[p.f]-tree.depth[v]-1ll);
-				things[c].emplace_back(p);
+				things[c].emplace_back(make_pair(p.f, p.s));
 			}
 		}
 		for (pii p : paths[v]){
 			if(p.f != v) {
 				int c=up(p.f, tree.depth[p.f]-tree.depth[v]-1ll);
-				things2[c].emplace_back(p);
+				things2[c].emplace_back(make_pair(p.f, p.s));
 			}
 			swap(p.f,p.s);
 			if(p.f != v) {
 				int c=up(p.f, tree.depth[p.f]-tree.depth[v]-1ll);
-				things2[c].emplace_back(p);
+				things2[c].emplace_back(make_pair(p.f, p.s));
 			}
 		}
  
@@ -283,11 +289,9 @@ int32_t main() {
 		for(int i : adj[v]) {
 			// do by pairs of children
 			unordered_map<int, vector<pii>> idk;
-			dbg(i);
 			for(auto p : things[i]) {
-				dbg(p.f,p.s);
-				// i is first child
-				int sec = up(p.s, tree.depth[p.s]-tree.depth[v]-1);
+				int sec = up(p.s, tree.depth[p.s]-tree.depth[v]-1); // p.s is in the other child
+				dbg(p.f, p.s);
 				idk[sec].emplace_back(p);
 			}
 			for(auto &j : idk) {
@@ -297,7 +301,6 @@ int32_t main() {
 				dbg(j.f, i);
 				// j.s stores all the pairs of paths that pass through v. 
 				// now lets build an aux tree to dfs on
-				int best=0; // best stores the overlap of best pair of paths from v to i then to some other places. 
 				vector<int> stuff = {v, j.f, i};
 				for(auto i : j.s) {
 					pairs[i.s].push_back(i.f);
@@ -310,16 +313,55 @@ int32_t main() {
 				tree.modifySubtree(v,0);
 				aux_tree(stuff);
 				int b=0;
+				unordered_map<int,vector<int>> pathsunder;
+				unordered_map<int,int> lchild;
+				unordered_map<int,int> sz;
+				sz[0]=0;
+				function<void(int,int)> idkbro=[&](int u, int p){
+					sz[u]=pairs[u].size();
+					lchild[u]=0;
+					for(int v:cadj[u]){
+						if(v==p)continue;
+						idkbro(v,u);
+						if(sz[v]>sz[lchild[u]]){
+							lchild[u]=v;
+						}
+						sz[u]+=sz[v];
+					}
+				};
+				idkbro(j.f, v);
+				pathsunder[0]={};
 				function<void(int,int)> dfs=[&](int u, int p) {
 					// edge above u is the last edge
+					// lchild u goes last
+					tree.modifySubtree(v,0);
 					for(int v:cadj[u]){
-						if(v!=p)dfs(v,u);
+						if(v==p or v==lchild[u])continue;
+						dfs(v,u);
+						tree.modifySubtree(v,0);
 					}
 					// add edges that are from u
 					// todo add children's thingies into hld
 					// do child with most paths last
+					if(lchild[u]!=0)
+						dfs(lchild[u], u);
+					for(int qwe:cadj[u]){
+						if(qwe==p or qwe==lchild[u])continue;
+						for(auto qw : pathsunder[qwe]){
+							int po=tree.queryPath(v,qw);
+							if(po!=0) b=max(b,tree.depth[u]-tree.depth[v]+po);
+							tree.modifyPath(qw,v,1);
+							pathsunder[u].push_back(qw);
+						}
+					}
+					for(auto qw : pairs[u]) {
+						int po=tree.queryPath(v,qw);
+						if(po!=0) b=max(b,tree.depth[u]-tree.depth[v]+po);
+						tree.modifyPath(qw,v,1);
+						pathsunder[u].push_back(qw);
+					}
 				};
-				dfs(j.f, i);
+				dfs(j.f, v);
 				ans=max(ans,b);
 			}
 		}
