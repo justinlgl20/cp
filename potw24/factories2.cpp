@@ -1,3 +1,51 @@
+#pragma GCC optimize(3)
+#pragma GCC target("avx")
+#pragma GCC optimize("Ofast")
+#pragma GCC optimize("inline")
+#pragma GCC optimize("-fgcse")
+#pragma GCC optimize("-fgcse-lm")
+#pragma GCC optimize("-fipa-sra")
+#pragma GCC optimize("-ftree-pre")
+#pragma GCC optimize("-ftree-vrp")
+#pragma GCC optimize("-fpeephole2")
+#pragma GCC optimize("-ffast-math")
+#pragma GCC optimize("-fsched-spec")
+#pragma GCC optimize("unroll-loops")
+#pragma GCC optimize("-falign-jumps")
+#pragma GCC optimize("-falign-loops")
+#pragma GCC optimize("-falign-labels")
+#pragma GCC optimize("-fdevirtualize")
+#pragma GCC optimize("-fcaller-saves")
+#pragma GCC optimize("-fcrossjumping")
+#pragma GCC optimize("-fthread-jumps")
+#pragma GCC optimize("-funroll-loops")
+#pragma GCC optimize("-fwhole-program")
+#pragma GCC optimize("-freorder-blocks")
+#pragma GCC optimize("-fschedule-insns")
+#pragma GCC optimize("inline-functions")
+#pragma GCC optimize("-ftree-tail-merge")
+#pragma GCC optimize("-fschedule-insns2")
+#pragma GCC optimize("-fstrict-aliasing")
+#pragma GCC optimize("-fstrict-overflow")
+#pragma GCC optimize("-falign-functions")
+#pragma GCC optimize("-fcse-skip-blocks")
+#pragma GCC optimize("-fcse-follow-jumps")
+#pragma GCC optimize("-fsched-interblock")
+#pragma GCC optimize("-fpartial-inlining")
+#pragma GCC optimize("no-stack-protector")
+#pragma GCC optimize("-freorder-functions")
+#pragma GCC optimize("-findirect-inlining")
+#pragma GCC optimize("-fhoist-adjacent-loads")
+#pragma GCC optimize("-frerun-cse-after-loop")
+#pragma GCC optimize("inline-small-functions")
+#pragma GCC optimize("-finline-small-functions")
+#pragma GCC optimize("-ftree-switch-conversion")
+#pragma GCC optimize("-foptimize-sibling-calls")
+#pragma GCC optimize("-fexpensive-optimizations")
+#pragma GCC optimize("-funsafe-loop-optimizations")
+#pragma GCC optimize("inline-functions-called-once")
+#pragma GCC optimize("-fdelete-null-pointer-checks")
+#pragma GCC optimize(2)
 #include <bits/stdc++.h>
 using namespace std;
  
@@ -26,7 +74,7 @@ void _print(T t, V... v) {cerr << t; if (sizeof...(v)) cerr <<", "; _print(v...)
  
 // SOURCED FROM https://github.com/bqi343/cp-notebook/blob/master/Implementations/content/data-structures/DynaCon.h
  
-constexpr int MAX_N = 1e5+5, MAX_M = 5e5+5;
+constexpr int MAX_N = 1e5+5, MAX_M = 2e5+30;
 int N;
 mt19937 rng((uint32_t)chrono::steady_clock::now().time_since_epoch().count());
 #define sz(x) int((x).size())
@@ -252,11 +300,12 @@ int spec;
 int ans[200005];
  
 void dfs(int u) {
-	if(cur < ans[u]) return;
+	if(cur <= ans[u]) return;
 	ans[u]=cur;
 	for(auto i : adj[u]){
 		dfs(i);
 	}
+	adj[u].clear();
 }
  
 void add(int a, int b) {
@@ -270,13 +319,19 @@ void add(int a, int b) {
 		dfs(a);
 	}
 	D.add(a,b);
-	adj[a].insert(b);
-	adj[b].insert(a);
+	// both aren't connected
+	if(!as and !bs)
+	{
+		adj[a].insert(b);
+		adj[b].insert(a);
+	}
 }
 void rem(int a, int b) {
 	D.rem(a,b);
-	adj[a].erase(adj[a].find(b));
-	adj[b].erase(adj[b].find(a));
+	if(adj[a].find(b)!=adj[a].end())
+		adj[a].erase(adj[a].find(b));
+	if(adj[b].find(a)!=adj[b].end())
+		adj[b].erase(adj[b].find(a));
 }
 void activate(int a) {
 	dfs(a);
@@ -285,12 +340,14 @@ void activate(int a) {
  
 int a[200005],b[200005];
 int ro[200005];
+bool gone[200005];
 int32_t main() { // HAVING ISSUE WITH REMOVING EDGE WE DIDNT INSERT OR SMTHING LIKE THAT
 	int n;
 	cin>>n;
 	N=3+n;
 	D.init();
-	spec=n+1;;
+	return 0;
+	spec=n+1;
 	D.add(n+1,n+2);
  
 	int q;cin>>q;
@@ -299,17 +356,16 @@ int32_t main() { // HAVING ISSUE WITH REMOVING EDGE WE DIDNT INSERT OR SMTHING L
 	}
 	vector<pair<char,pii>> sw;
 	int cnt=1;
-	multiset<pii> idk;
 	for(int i=0;i<q;i++){
 		char c;cin>>c;
 		int a=0,b=0;
-		if(c=='A'){cin>>a>>b;::a[cnt]=a;::b[cnt]=b;cnt++;idk.insert(make_pair(a,b));
+		if(c=='A'){cin>>a>>b;::a[cnt]=a;::b[cnt]=b;cnt++;
 		}
 		else if (c=='D'){cin>>a;ro[a]=i+1;}
 		else{
 			int r;cin>>r;
 			a=::a[r];b=::b[r];
-			idk.erase(idk.find(make_pair(a,b)));
+			gone[r]=1;
 		}
 		sw.push_back(make_pair(c,make_pair(a,b)));
 	}
@@ -318,8 +374,9 @@ int32_t main() { // HAVING ISSUE WITH REMOVING EDGE WE DIDNT INSERT OR SMTHING L
 		if(ro[i]==0)
 			activate(i);
 	}
-	for(auto i : idk) {
-		add(i.f, i.s);
+	for(int i=1;i<cnt;i++) {
+		if(!gone[i])
+			add(a[i], b[i]);
 	}
 	for(int i=q-1;i>=0;i--) {
 		cur=i;
