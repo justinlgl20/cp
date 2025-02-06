@@ -26,7 +26,8 @@ void _print(T t, V... v) {cerr << t; if (sizeof...(v)) cerr <<", "; _print(v...)
 
 // SOURCED FROM https://github.com/bqi343/cp-notebook/blob/master/Implementations/content/data-structures/DynaCon.h
 
-constexpr int MAX_N = 1e5+5, MAX_M = 1e5+5;
+int n;
+constexpr int MAX_N = 1008, MAX_M = 4200;
 int N;
 mt19937 rng((uint32_t)chrono::steady_clock::now().time_since_epoch().count());
 #define sz(x) int((x).size())
@@ -126,7 +127,7 @@ template<int SZ> struct Treap {
 		}
 	}
 	int reroot(int x) { 
-		assert(1 <= x && x <= N); return makeFirst(x); }
+		return makeFirst(x); }
 	void markSpecialNode(int x, int val) {
 		if (specialNode[x] == val) return;
 		for(specialNode[x]=val;x;x=par[x]) 
@@ -144,7 +145,7 @@ struct ETT {
 	int spanEdges;
 	void init(int _level) {
 		level = _level; 
-		for(int i=0;i<N;i++) T.makeEdge(-1);
+		for(int i=0;i<n+2;i++) T.makeEdge(-1);
 	}
 	bool con(int a, int b) { return T.con(a,b); }
 	bool add(int label) {
@@ -244,35 +245,76 @@ struct DynaCon {
 		}
 	}
 };
-DynaCon D;
+DynaCon *D;
 
-priority_queue<int> things;
 int a[200005],b[200005];
-bool works[200005];
+bool works[100005];
+bool ro[100005];
 int32_t main() {
-	cin>>N;
-	N+=3;
-	D.init();
-	int spec=100001;
-	for(int i=1;i<=N;i++){
-		works[i]=1e9;
-		D.add(i,spec);
-	}
+	cin>>n;
+	int spec=n+1;
 	int q;cin>>q;
-	vector<pair<char,pii>> s;
+	int cnt=1;
+	vector<pair<char,pii>> sw;
 	for(int i=0;i<q;i++){
 		char c;cin>>c;
-		int a,b;
-		if(c=='A')cin>>a>>b;
-		else if (c=='D')cin>>a;
+		int a=0,b=0;
+		if(c=='A'){cin>>a>>b;(::a[cnt]=a);(::b[cnt]=b);cnt++;}
+		else if (c=='D'){cin>>a;ro[a]=i+1;}
 		else{
 			int r;cin>>r;
 			a=::a[r];b=::b[r];
 		}
-		s.push_back(make_pair(c,make_pair(a,b)));
+		sw.push_back(make_pair(c,make_pair(a,b)));
+		dbg(c, a, b);
 	}
-	int cnt=1;
-	for(int i=0;i<q;i++) {
-		
+	// lets run n bsearches parallel
+	vector<int> lo(n+4, 0),hi(n+4, q+1);
+	for(int i=1;i<=n;i++){
+		lo[i]=ro[i]-1;
+	}
+	for (int _ =0; _ < 1;_++){
+		D=new DynaCon();
+		N=n+4;
+		D->init();
+		vector<vector<int>> checks(n+4,vector<int>());
+		// things to check pair of inx
+		// need to check inx, spec at this time
+		int s=0;
+		for(int i=1;i<=n;i++){
+			if(!ro[i]){
+				D->add(i, spec);
+				lo[i]=q;hi[i]=q+1;
+			}
+			dbg(i, lo[i], hi[i]);
+			if(hi[i]==lo[i]+1)continue;
+			s++;
+			int mid=(hi[i]+lo[i])>>1ll;
+			checks[mid-1].emplace_back(i);
+		}
+		// UNDER HERE
+		if(!s){delete(D);break;}
+		for(int i=q-1;i>=q-1;i--){
+			// if works now, lo goes to i+1
+			for(int j : checks[i]){
+				// THIS BIT IS BREAKING FOR SOME REASON
+				if((D->con(j, spec))) lo[j]=i+1;
+				else hi[j]=i+1;
+			}
+			// ABOVE HERE
+			char c = sw[i].f;
+			int a=sw[i].s.f, b=sw[i].s.s;
+			if(c=='R'){
+				D->add(a,b);
+			} else if(c=='D'){
+				D->add(a, spec);
+			} else if(c=='A'){
+				D->rem(a,b);
+			}
+		}
+		delete(D);
+	}
+	for(int i=1;i<=n;i++){
+		cout<<lo[i]<<"\n";
 	}
 }
