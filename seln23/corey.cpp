@@ -98,6 +98,16 @@ int32_t main() {
 	};
 	vector<int> colour(n+4,0); // 1 is blue, 2 is red
 	bool got3=0;
+	function<void(int,int)>set=[&](int i,int v){
+		if(colour[i]==v)return;
+		if(colour[i])fail();
+		if(v==2){
+			colour[i]=2;
+			for(int j:adj[i])set(j,1);
+		} else {
+			colour[i]=1;
+		}
+	};
 	for(int i=1;i<=n;i++){
 		if(colour[i]==1)continue;
 		vector<int> dist=g.bfs(i);
@@ -105,26 +115,20 @@ int32_t main() {
 		for(int j=1;j<=n;j++){
 			if(j==i or uf.rep(i)!=uf.rep(j))continue;
 			if(dist[j]>3)fail();
+			if(dist[j]==2 and colour[j]==1){
+				set(i, 2);
+			} else if(dist[j]==2 and colour[i]==1){
+				set(j, 2);
+			} else if(dist[j]==2){
+				set(g.from[j], 1);
+			}
 			if(dist[j]==3 and colour[j]==1){
 				fail();
-			}
-			if(dist[j]==3){
+			} else if(dist[j]==3){
 				got3=1;
 				dbg(i,j);
-				if(colour[i]!=2) {
-					colour[i]=2;
-					for(auto jw : adj[i]){
-						if(colour[jw]==2)fail();
-						colour[jw]=1;
-					}
-				}
-				if(colour[j]!=2) {
-					colour[j]=2;
-					for(auto jw : adj[j]){
-						if(colour[jw]==2)fail();
-						colour[jw]=1;
-					}
-				}
+				set(i, 2);
+				set(j, 2);
 			}
 		}
 	}
@@ -145,35 +149,6 @@ int32_t main() {
 	sort(all(sizes));
 	if(sizes.size()>=2 and sizes[sizes.size()-2].f > 1)fail();
 	main_comp = sizes.back().s;
-	if (!got3) {
-		// ADDING THIS MADE SOME WRONG AND SOME RIGHT
-		// THERE ARE ONLY PATHS OF LENGTH 2
-		for (int i=1;i<=n;i++){
-			if(uf.rep(i) !=main_comp)continue;
-			int bw=0;
-			for(auto j:adj[i])bw+=(deg[j]>1);
-			if(bw>=2)continue;
-			vector<int> rem(n+4,0);
-			for(auto j : adj[i])rem[j]=deg[j]==1;
-			int cnt=0;
-			for(int j=1;j<=n;j++){
-				if(uf.rep(j)!=main_comp)continue;
-				cnt+=rem[j]==0;
-			}
-			int wq=0;
-			for(int j=0;j<m;j++){
-				if(rem[a[j]]==rem[b[j]]){
-					if(rem[a[j]]==0)wq++;
-				}
-			}
-			if(wq!=(cnt)*(cnt-1ll)/2)continue;
-			cout<<"YES\n";
-			return 0;
-		}
-		// DOESN'T CHANGE ANYTHING UNLESS I PUT A FAIL HERE
-
-	}
-	int biggest = sqrt(m)+50;
 	
 	int cnt=0;
 	
