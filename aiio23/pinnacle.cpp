@@ -28,12 +28,15 @@ int nxt() {
 
 #define pii pair<int, int>
 
+
+
 template<int SZ>
 struct tree {
 	int p[SZ];
 	int val[SZ];
 	vector<pii> adj[SZ];
 	void ae(int u, int v, int w){
+		dbg(u,v,w);
 		p[u]=v;
 		adj[v].emplace_back(u,w);
 	}
@@ -51,10 +54,29 @@ struct tree {
 	}
 };
 
-tree<100005> right, left;
+tree<100005> r, l;
 
 int32_t main() {
-	int n;cin>>n;vector<int>a(n);
+	int n,m;cin>>n>>m;vector<int>a(n);
 	for(int i=0;i<n;i++)cin>>a[i];
+	vector<int> psa(n,a[0]);
+	for(int i=1;i<n;i++)psa[i]=psa[i-1]+a[i];
+	function<int(int,int)>sum=[&](int l,int r){
+		return psa[r]-(l>0?psa[l-1]:0);
+	};
 	stack<int> s; // stack is going down
+	// parent of i is closest thing on right that is higher or equal to i, with weight of minimum number of things we must add
+	for(int i=n-1;i>=0;i--){
+		while(s.size() and a[s.top()]<a[i])s.pop();
+		if(s.size())
+			r.ae(i, s.top(), a[i]*(s.top()-i-1) - sum(i+1, s.top()-1));
+		s.push(i);
+	}
+	while (s.size())s.pop();
+	for(int i=0;i<n;i++){
+		while(s.size() and a[s.top()]<a[i])s.pop();
+		if(s.size())
+			l.ae(i,s.top(),a[i]*(i-s.top()-1) - sum(s.top()+1, i-1));
+		s.push(i);
+	}
 }
