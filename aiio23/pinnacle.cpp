@@ -28,27 +28,33 @@ int nxt() {
 
 #define pii pair<int, int>
 
-vector<pii> queries;
+template<int SZ>
+struct tree {
+	int p[SZ];
+	int val[SZ];
+	vector<pii> adj[SZ];
+	void ae(int u, int v, int w){
+		p[u]=v;
+		adj[v].emplace_back(u,w);
+	}
+	void dfs(int u){
+		for(auto i:adj[u]){
+			val[i]=val[u]+i.s;
+			dfs(i.f);
+		}
+	}
+	void init(int root) {
+		dfs(root);
+	}
+	void query(int u, int v){ // v is peak of mountain, u is l/r
+		return val[u]-val[v];
+	}
+};
 
-int highest;
-int inx;
-vector<int> stackl;
-vector<int> stackr;
-int cost;
+tree<100005> right, left;
 
-vector<int> height;
-
-int l, r;
-
-void ll() {
-    //add in l-1
-    if (height[l-1] > highest) {
-        highest = l-1
-        inx = l-1;
-        stackl = {};
-    } else {
-        
-    }
-
-
+int32_t main() {
+	int n;cin>>n;vector<int>a(n);
+	for(int i=0;i<n;i++)cin>>a[i];
+	stack<int> s; // stack is going down
 }
