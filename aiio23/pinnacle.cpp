@@ -27,9 +27,11 @@ int nxt() {
 }
 
 #define pii pair<int, int>
+#define f first
+#define s second
 
 template<class T> struct SegTree { // cmb(ID,b) = b
-	const T ID{}; T cmb(T a, T b) { return max(a,b); } 
+	const T ID{0, 0}; T cmb(T a, T b) { return max(a,b); } 
 	int n; vector<T> seg;
 	void init(int _n) { // upd, query also work if n = _n
 		for (n = 1; n < _n; ) n *= 2; 
@@ -68,14 +70,14 @@ struct tree {
 	}
 	void dfs(int u){
 		for(auto i:adj[u]){
-			val[i]=val[u]+i.s;
+			val[i.f]=val[u]+i.s;
 			dfs(i.f);
 		}
 	}
 	void init(int root) {
 		dfs(root);
 	}
-	void query(int u, int v){ // v is peak of mountain, u is l/r
+	int query(int u, int v){ // v is peak of mountain, u is l/r
 		return val[u]-val[v];
 	}
 };
@@ -108,5 +110,17 @@ int32_t main() {
 		if(s.size())
 			l.ae(i,s.top(),a[i]*(i-s.top()-1) - sum(s.top()+1, i-1));
 		s.push(i);
+	}
+	int root = seg.query(0, n-1).second;
+
+	l.init(root);
+	r.init(root);
+	while(m--){
+		int a,b;cin>>a>>b;
+		a--;b--;
+		dbg(a,b);
+		int top=seg.query(a,b).second;
+		int ans = r.query(a,top) + l.query(b,top);
+		cout<<ans<<"\n";
 	}
 }
